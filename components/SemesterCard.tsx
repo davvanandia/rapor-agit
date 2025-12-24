@@ -14,9 +14,9 @@ export default function SemesterCard({ semester }: SemesterCardProps) {
   const router = useRouter();
 
   const getClassLabel = (id: number) => {
-    if (id <= 2) return { class: 'Kelas 7 atau 10', color: 'bg-blue-50 border-blue-200' };
-    if (id <= 4) return { class: 'Kelas 8 atau 11', color: 'bg-purple-50 border-purple-200' };
-    return { class: 'Kelas 9 atau 12', color: 'bg-amber-50 border-amber-200' };
+    if (id <= 2) return { class: 'Kelas 10', color: 'bg-blue-50 border-blue-200' };
+    if (id <= 4) return { class: 'Kelas 11', color: 'bg-purple-50 border-purple-200' };
+    return { class: 'Kelas 12', color: 'bg-amber-50 border-amber-200' };
   };
 
   const getScoreColor = (score: number) => {

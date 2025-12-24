@@ -116,7 +116,7 @@ export default function Home() {
     );
   }
 
-  // Hitung progress bar untuk rata-rata
+  // Hitung progress bar untuk rata-rata (dalam persen)
   const averagePercentage = Math.min(overallAverage, 100);
 
   return (
@@ -164,10 +164,10 @@ export default function Home() {
                     <span className="text-gray-600">Rata-rata Keseluruhan</span>
                     <div className="text-right">
                       <span className="font-bold text-gray-900">{overallAverage.toFixed(2)}</span>
-                      <div className="text-xs text-gray-500">
-                        {totalOverallScore.toLocaleString('id-ID')} ÷ {totalSubjectsOverall} mapel
-                      </div>
                     </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    {totalOverallScore.toLocaleString('id-ID')} ÷ {totalSubjectsOverall} mapel = {overallAverage.toFixed(2)}
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full">
                     <div 
@@ -250,6 +250,9 @@ export default function Home() {
             <div className="text-gray-600 text-sm space-y-2">
               <p>• <strong>Rata-rata per semester</strong> = Total skor semester ÷ Jumlah mapel</p>
               <p>• <strong>Rata-rata keseluruhan</strong> = Total semua skor ÷ Total semua mapel</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Contoh: Sem 1 (800/8) + Sem 2 (800/8) + Sem 3 (700/7) = 2300 ÷ 23 = 100
+              </p>
             </div>
           </div>
           
@@ -304,12 +307,12 @@ export default function Home() {
         <div className="bg-gray-100 border border-gray-300 rounded-lg p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Perhitungan Rata-rata</h4>
+              <h4 className="font-semibold text-gray-900 mb-1">Perhatian: Reset Data</h4>
               <p className="text-gray-600 text-sm">
-                Contoh: Semester 1 (800 skor, 8 mapel), Semester 2 (800 skor, 8 mapel), Semester 3 (700 skor, 7 mapel)
+                Semua data disimpan di browser Anda. Data tidak akan hilang kecuali browser direset.
               </p>
               <p className="text-gray-600 text-sm font-medium mt-1">
-                Rata-rata keseluruhan = (800+800+700) ÷ (8+8+7) = 2300 ÷ 23 = 100
+                Reset akan menghapus semua data semester yang telah diinput.
               </p>
             </div>
             <button
