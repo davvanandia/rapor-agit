@@ -1,7 +1,18 @@
+// lib/utils.ts
 export const calculateSemesterAverage = (subjects: { score: number }[]): number => {
   if (subjects.length === 0) return 0;
   const totalScore = subjects.reduce((sum, subject) => sum + subject.score, 0);
   return Number((totalScore / subjects.length).toFixed(2));
+};
+
+// Tambahkan fungsi-fungsi yang dibutuhkan
+export const calculateAverage = (subjects: { score: number }[]): number => {
+  // Alias untuk calculateSemesterAverage agar kompatibel dengan import yang ada
+  return calculateSemesterAverage(subjects);
+};
+
+export const calculateTotalScore = (subjects: { score: number }[]): number => {
+  return subjects.reduce((sum, subject) => sum + subject.score, 0);
 };
 
 export const calculateOverallAverage = (semesters: { subjects: { score: number }[] }[]): number => {
@@ -34,4 +45,16 @@ export const getStatusColor = (score: number, kkm?: number) => {
   if (score >= 75) return 'text-amber-600';
   if (score >= 65) return 'text-orange-600';
   return 'text-red-600';
+};
+
+// Fungsi tambahan untuk konversi string ke number dengan aman
+export const safeParseInt = (value: string, defaultValue: number = 0): number => {
+  const parsed = parseInt(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
+export const safeParseFloat = (value: string, defaultValue: number = 0): number => {
+  const cleaned = value.replace(',', '.');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? defaultValue : parsed;
 };
