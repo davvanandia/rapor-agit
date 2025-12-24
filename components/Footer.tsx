@@ -1,51 +1,64 @@
-'use client';
+"use client";
 
-import { FiInstagram, FiGithub } from 'react-icons/fi';
+import { FiInstagram, FiGithub } from "react-icons/fi";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gray-200 mt-12">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="text-center md:text-left mb-6 md:mb-0">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Rapor Agit</h3>
-            <p className="text-gray-600 text-sm">
-              Dibuat dengan ❤️ oleh Davina Anandia • {currentYear}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">
-              Alat bantu perhitungan nilai akademik untuk siswa
-            </p>
-          </div>
-          
-          <div className="flex space-x-4">
+    <footer className="border-t border-gray-200">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Text */}
+          <p className="text-sm text-gray-500 text-center md:text-left">
+            © {currentYear} Rapor Agit By Davina Anandia - All Rights Reserved
+          </p>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-4">
             <a
               href="https://www.instagram.com/davinannd"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-gray-800 transition-colors"
               aria-label="Instagram"
+              className="text-gray-500 hover:text-gray-800 transition-colors"
             >
-              <FiInstagram size={20} />
+              <FiInstagram size={18} />
             </a>
-            
+
             <a
               href="https://github.com/davvanandia"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-gray-800 transition-colors"
               aria-label="GitHub"
+              className="text-gray-500 hover:text-gray-800 transition-colors"
             >
-              <FiGithub size={20} />
+              <FiGithub size={18} />
             </a>
+
+            <a
+  href="https://www.tiktok.com/@davinadapinskuyy"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="TikTok"
+  className="text-gray-500 hover:text-gray-800 transition-colors"
+  title="TikTok"
+>
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="18" 
+    height="18" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+</a>
           </div>
-        </div>
-        
-        <div className="text-center mt-6 pt-6 border-t border-gray-200">
-          <p className="text-gray-500 text-sm">
-            © {currentYear} Rapor Agit. Semua hak dilindungi.
-          </p>
         </div>
       </div>
     </footer>

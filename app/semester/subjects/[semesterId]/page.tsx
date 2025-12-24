@@ -94,7 +94,7 @@ export default function SubjectInputPage() {
     const average = calculateAverage(scores);
 
     saveSemesterData(semesterId, {
-      subjects: subjects.map((s, i) => ({ ...s, id: `s${semesterId}-${i}` })),
+      subjects: subjects.map((s, i) => ({ ...s, id: `s${semesterId}-${i}`, kkm: 70 })),
       totalScore,
       average,
       subjectCount: subjects.length

@@ -6,7 +6,7 @@ import { getStoredData, saveSemesterData, getSubjectsList, addSubjectToList } fr
 import { SemesterData, Subject } from '@/types';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-import { FiArrowLeft, FiPlus, FiSearch, FiInfo, FiCheck, FiBook, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiSearch, FiInfo, FiCheck, FiBook, FiX, FiAlertTriangle, FiEdit2, FiSave, FiTrash2 } from 'react-icons/fi';
 
 export default function SemesterDetailPage() {
   const params = useParams();
@@ -15,10 +15,12 @@ export default function SemesterDetailPage() {
   
   const [semester, setSemester] = useState<SemesterData | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [newSubject, setNewSubject] = useState({ name: '', score: 0 });
-  const [allSubjectsList, setAllSubjectsList] = useState<string[]>([]);
+  const [newSubject, setNewSubject] = useState({ name: '', score: 0, kkm: '' });
+  const [allSubjectsList, setAllSubjectsList] = useState<{name: string, lastKKM: number}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editSubject, setEditSubject] = useState<Subject | null>(null);
   
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,11 +50,12 @@ export default function SemesterDetailPage() {
     e.preventDefault();
     setIsAdding(true);
     
+    // Validasi input
     if (!newSubject.name.trim() || newSubject.score < 1 || newSubject.score > 100) {
       await Swal.fire({
         icon: 'error',
         title: 'Input Tidak Valid',
-        html: '<p class="text-gray-600">Nama mata pelajaran wajib diisi dan nilai harus antara 1-100</p>',
+        html: '<p class="text-gray-600">Nama wajib diisi, nilai harus antara 1-100</p>',
         background: '#ffffff',
         color: '#374151',
         customClass: {
@@ -63,19 +66,44 @@ export default function SemesterDetailPage() {
       return;
     }
 
+    // Parse KKM - lebih fleksibel untuk menerima angka dengan koma atau desimal
+    let kkmValue = 75; // Default
+    if (newSubject.kkm.trim() !== '') {
+      // Hapus spasi dan ganti koma dengan titik
+      const cleanedKKM = newSubject.kkm.trim().replace(',', '.');
+      const parsedKKM = parseFloat(cleanedKKM);
+      
+      // Validasi angka
+      if (!isNaN(parsedKKM) && parsedKKM >= 0 && parsedKKM <= 100) {
+        kkmValue = Math.round(parsedKKM * 100) / 100; // Pertahankan 2 desimal
+      } else {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'KKM Tidak Valid',
+          html: '<p class="text-gray-600">KKM harus berupa angka antara 0-100. Menggunakan nilai default 75.</p>',
+          background: '#ffffff',
+          color: '#374151',
+          customClass: {
+            popup: 'rounded-lg border border-gray-200'
+          }
+        });
+      }
+    }
+
     const newSubjectObj: Subject = {
       id: `${Date.now()}-${Math.random()}`,
       name: newSubject.name.trim(),
       score: newSubject.score,
+      kkm: kkmValue,
     };
 
     const updatedSubjects = [...subjects, newSubjectObj];
     updateSemester(updatedSubjects);
     
-    addSubjectToList(newSubject.name.trim());
+    addSubjectToList(newSubjectObj);
     setAllSubjectsList(getSubjectsList());
     
-    setNewSubject({ name: '', score: 0 });
+    setNewSubject({ name: '', score: 0, kkm: '' });
     setShowSuggestions(false);
     
     setTimeout(() => {
@@ -155,8 +183,55 @@ export default function SemesterDetailPage() {
     }
   };
 
+  // Fungsi untuk memulai edit
+  const startEdit = (subject: Subject) => {
+    setEditingId(subject.id);
+    setEditSubject({ ...subject });
+  };
+
+  // Fungsi untuk menyimpan edit
+  const saveEdit = async () => {
+    if (!editSubject) return;
+
+    // Validasi nilai
+    if (editSubject.score < 1 || editSubject.score > 100) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Nilai Tidak Valid',
+        text: 'Nilai harus antara 1-100',
+        background: '#ffffff',
+        color: '#374151',
+        customClass: {
+          popup: 'rounded-lg border border-gray-200'
+        }
+      });
+      return;
+    }
+
+    const updatedSubjects = subjects.map(subject => 
+      subject.id === editingId ? editSubject : subject
+    );
+
+    updateSemester(updatedSubjects);
+    setEditingId(null);
+    setEditSubject(null);
+
+    // Update juga di list subjects global
+    const currentSubject = allSubjectsList.find(item => item.name === editSubject.name);
+    if (currentSubject) {
+      addSubjectToList(editSubject);
+      setAllSubjectsList(getSubjectsList());
+    }
+  };
+
+  // Fungsi untuk membatalkan edit
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditSubject(null);
+  };
+
   const filteredSuggestions = allSubjectsList.filter(subject =>
-    subject.toLowerCase().includes(newSubject.name.toLowerCase())
+    subject.name.toLowerCase().includes(newSubject.name.toLowerCase())
   );
 
   if (!semester) {
@@ -207,7 +282,7 @@ export default function SemesterDetailPage() {
               <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-center">
                 <p className="text-sm text-gray-500 mb-1">Rata-rata</p>
                 <p className="text-xl font-bold text-gray-900">
-                  {semester.average > 0 ? semester.average.toFixed(1) : '--'}
+                  {semester.average > 0 ? semester.average.toFixed(2) : '--'}
                 </p>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-center">
@@ -235,7 +310,7 @@ export default function SemesterDetailPage() {
           </h2>
           
           <form onSubmit={handleAddSubject} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative" ref={suggestionsRef}>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Mata Pelajaran
@@ -269,14 +344,21 @@ export default function SemesterDetailPage() {
                         key={index}
                         type="button"
                         onClick={() => {
-                          setNewSubject({ ...newSubject, name: suggestion });
+                          setNewSubject({ 
+                            ...newSubject, 
+                            name: suggestion.name,
+                            kkm: suggestion.lastKKM.toString() 
+                          });
                           setShowSuggestions(false);
                           inputRef.current?.focus();
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 border-b border-gray-100 last:border-b-0 flex items-center text-sm"
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 border-b border-gray-100 last:border-b-0 flex items-center justify-between text-sm"
                       >
-                        <FiCheck className="mr-3 text-blue-600" />
-                        <span>{suggestion}</span>
+                        <div className="flex items-center">
+                          <FiCheck className="mr-3 text-blue-600" />
+                          <span>{suggestion.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">KKM: {suggestion.lastKKM}</span>
                       </button>
                     ))}
                   </div>
@@ -296,6 +378,21 @@ export default function SemesterDetailPage() {
                   className="input-field w-full"
                   placeholder="Masukkan nilai"
                   required
+                  disabled={isAdding}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  KKM (Kriteria Ketuntasan Minimal)
+                </label>
+                <input
+                  type="text"
+                  value={newSubject.kkm}
+                  onChange={(e) => setNewSubject({ ...newSubject, kkm: e.target.value })}
+                  className="input-field w-full"
+                  placeholder="Contoh: 75, 70, 78.5, 80"
+                  title="Masukkan angka KKM sesuai dengan sekolah dan semester anda"
                   disabled={isAdding}
                 />
               </div>
@@ -340,7 +437,7 @@ export default function SemesterDetailPage() {
                 Daftar Mata Pelajaran ({subjects.length})
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Klik pada mata pelajaran untuk menghapusnya
+                Klik tombol edit (✏️) untuk mengubah, atau hapus (🗑️) untuk menghapus
               </p>
             </div>
             
@@ -365,26 +462,108 @@ export default function SemesterDetailPage() {
               <h3 className="text-lg font-bold text-gray-900 mb-2">Belum Ada Mata Pelajaran</h3>
               <p className="text-gray-600 max-w-md mx-auto mb-6">
                 Mulai dengan menambahkan mata pelajaran pertama menggunakan form di atas.
-                Nama mata pelajaran akan tersimpan untuk memudahkan input di semester berikutnya.
+                Nilai KKM akan tersimpan untuk konsistensi di semester berikutnya.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {subjects.map((subject, index) => {
-                const scoreColor = subject.score >= 85 ? 'text-green-600' :
+                const isBelowKKM = subject.score < subject.kkm;
+                const scoreColor = isBelowKKM ? 'text-red-600' :
+                                 subject.score >= 85 ? 'text-green-600' :
                                  subject.score >= 75 ? 'text-amber-600' :
                                  subject.score >= 65 ? 'text-orange-600' : 'text-red-600';
                 
-                const bgColor = subject.score >= 85 ? 'bg-green-50 border-green-200' :
+                const bgColor = isBelowKKM ? 'bg-red-50 border-red-200' :
+                               subject.score >= 85 ? 'bg-green-50 border-green-200' :
                                subject.score >= 75 ? 'bg-amber-50 border-amber-200' :
                                subject.score >= 65 ? 'bg-orange-50 border-orange-200' : 
                                'bg-red-50 border-red-200';
                 
+                // Mode edit
+                if (editingId === subject.id && editSubject) {
+                  return (
+                    <div key={subject.id} className={`p-4 rounded-md border ${bgColor}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center mr-3">
+                            <FiEdit2 className="text-blue-600" />
+                          </div>
+                          <h4 className="font-medium text-gray-900">Edit: {subject.name}</h4>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={saveEdit}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                            title="Simpan"
+                          >
+                            <FiSave size={18} />
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+                            title="Batal"
+                          >
+                            <FiX size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Nilai (1-100)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={editSubject.score || ''}
+                            onChange={(e) => setEditSubject({
+                              ...editSubject,
+                              score: parseInt(e.target.value) || 0
+                            })}
+                            className="input-field w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            KKM
+                          </label>
+                          <input
+                            type="text"
+                            value={editSubject.kkm.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Parse nilai untuk disimpan sebagai number
+                              const parsedValue = parseFloat(value);
+                              if (!isNaN(parsedValue)) {
+                                setEditSubject({
+                                  ...editSubject,
+                                  kkm: parsedValue
+                                });
+                              } else {
+                                // Jika bukan angka, set ke default
+                                setEditSubject({
+                                  ...editSubject,
+                                  kkm: 75
+                                });
+                              }
+                            }}
+                            className="input-field w-full text-sm"
+                            placeholder="Contoh: 75, 70, 78.5"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // Mode tampil normal
                 return (
                   <div
                     key={subject.id}
-                    className={`p-4 rounded-md border ${bgColor} cursor-pointer transition-colors hover:bg-opacity-80`}
-                    onClick={() => handleDelete(subject.id, subject.name)}
+                    className={`p-4 rounded-md border ${bgColor} transition-colors`}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center">
@@ -395,24 +574,33 @@ export default function SemesterDetailPage() {
                           <h4 className="font-medium text-gray-900 truncate max-w-[150px]">
                             {subject.name}
                           </h4>
-                          {allSubjectsList.includes(subject.name) && (
-                            <div className="flex items-center text-xs text-blue-600 mt-1">
-                              <FiCheck className="mr-1" size={10} />
-                              Tersimpan untuk semester lain
-                            </div>
-                          )}
+                          <div className="flex items-center text-xs text-blue-600 mt-1">
+                            <FiCheck className="mr-1" size={10} />
+                            KKM: {subject.kkm}
+                          </div>
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(subject.id, subject.name);
-                        }}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                        aria-label="Hapus mata pelajaran"
-                      >
-                        <FiX size={18} />
-                      </button>
+                      <div className="flex items-center space-x-1">
+                        {isBelowKKM && (
+                          <div className="text-red-600" title="Nilai di bawah KKM">
+                            <FiAlertTriangle size={18} />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => startEdit(subject)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                          title="Edit"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(subject.id, subject.name)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                          title="Hapus"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -420,13 +608,9 @@ export default function SemesterDetailPage() {
                         <p className="text-sm text-gray-500">Nilai</p>
                         <p className={`text-xl font-bold ${scoreColor}`}>
                           {subject.score}
-                        </p>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="text-sm text-gray-500">Peringkat</div>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {index + 1}/{subjects.length}
+                          {isBelowKKM && (
+                            <span className="text-xs text-red-500 ml-2">(KKM: {subject.kkm})</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -444,19 +628,23 @@ export default function SemesterDetailPage() {
               <FiInfo className="text-blue-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Tips & Informasi</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">Fitur Input KKM Fleksibel</h4>
               <ul className="text-gray-700 space-y-2">
                 <li className="flex items-start">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 mr-3 flex-shrink-0"></div>
-                  <span className="text-sm">Nama mata pelajaran akan disimpan dan bisa dipilih di semester berikutnya untuk konsistensi</span>
+                  <span className="text-sm">KKM bisa berbeda tiap sekolah dan semester</span>
                 </li>
                 <li className="flex items-start">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 mr-3 flex-shrink-0"></div>
-                  <span className="text-sm">Klik pada kartu mata pelajaran untuk menghapusnya dari semester ini</span>
+                  <span className="text-sm">Input KKM sebagai teks biasa (contoh: 75, 70.5, 78, 80)</span>
                 </li>
                 <li className="flex items-start">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 mr-3 flex-shrink-0"></div>
-                  <span className="text-sm">Lengkapi semua 5 semester untuk analisis trend yang lengkap</span>
+                  <span className="text-sm">Jika kosong, akan menggunakan nilai default 75</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 mr-3 flex-shrink-0"></div>
+                  <span className="text-sm">Saran KKM dari semester sebelumnya tetap tersimpan untuk konsistensi</span>
                 </li>
               </ul>
             </div>

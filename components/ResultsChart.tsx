@@ -1,8 +1,8 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ChartData } from '@/types';
-import { FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiAlertTriangle } from 'react-icons/fi';
 
 interface ResultsChartProps {
   data: ChartData[];
@@ -20,18 +20,31 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
       <div className="bg-white border border-gray-200 rounded-md shadow-lg p-3">
         <p className="font-semibold text-gray-900 mb-2">{label}</p>
         <div className="space-y-1">
-          {payload.map((entry, index) => (
-            <div key={index} className="flex items-center justify-between text-sm">
-              <div className="flex items-center">
-                <div 
-                  className="w-2 h-2 rounded-full mr-2"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-gray-600">{entry.name}:</span>
+          {payload.map((entry, index) => {
+            const isCritical = entry.payload[`${entry.dataKey}_kkm`] && entry.value < entry.payload[`${entry.dataKey}_kkm`];
+            return (
+              <div key={index} className="flex items-center justify-between text-sm">
+                <div className="flex items-center">
+                  <div 
+                    className="w-2 h-2 rounded-full mr-2"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-gray-600">{entry.name}:</span>
+                  {isCritical && (
+                    <FiAlertTriangle className="ml-2 text-red-500" size={12} />
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className={`font-semibold ${isCritical ? 'text-red-600' : 'text-gray-900'}`}>
+                    {entry.value}
+                  </span>
+                  {entry.payload[`${entry.dataKey}_kkm`] && (
+                    <div className="text-xs text-gray-500">KKM: {entry.payload[`${entry.dataKey}_kkm`]}</div>
+                  )}
+                </div>
               </div>
-              <span className="font-semibold text-gray-900 ml-4">{entry.value}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -40,19 +53,45 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 };
 
 export default function ResultsChart({ data }: ResultsChartProps) {
-  // Filter hanya data yang memiliki nilai di minimal 2 semester
+  // Filter data yang memiliki nilai di minimal 1 semester
   const validData = data.filter(item => {
     const scores = [item.semester1, item.semester2, item.semester3, item.semester4, item.semester5];
-    return scores.filter(score => score > 0).length >= 2;
+    return scores.some(score => score > 0);
   });
 
-  const chartData = [
-    { semester: 'Sem 1', ...Object.fromEntries(validData.map(d => [d.subject, d.semester1])) },
-    { semester: 'Sem 2', ...Object.fromEntries(validData.map(d => [d.subject, d.semester2])) },
-    { semester: 'Sem 3', ...Object.fromEntries(validData.map(d => [d.subject, d.semester3])) },
-    { semester: 'Sem 4', ...Object.fromEntries(validData.map(d => [d.subject, d.semester4])) },
-    { semester: 'Sem 5', ...Object.fromEntries(validData.map(d => [d.subject, d.semester5])) },
-  ];
+  // Siapkan data untuk chart dengan KKM
+  const semestersData = [];
+  
+  // Cek setiap semester apakah ada data
+  if (validData.some(d => d.semester1 > 0)) semestersData.push({ 
+    semester: 'Sem 1', 
+    ...Object.fromEntries(validData.map(d => [d.subject, d.semester1])),
+    ...Object.fromEntries(validData.map(d => [`${d.subject}_kkm`, d.kkm]))
+  });
+  
+  if (validData.some(d => d.semester2 > 0)) semestersData.push({ 
+    semester: 'Sem 2', 
+    ...Object.fromEntries(validData.map(d => [d.subject, d.semester2])),
+    ...Object.fromEntries(validData.map(d => [`${d.subject}_kkm`, d.kkm]))
+  });
+  
+  if (validData.some(d => d.semester3 > 0)) semestersData.push({ 
+    semester: 'Sem 3', 
+    ...Object.fromEntries(validData.map(d => [d.subject, d.semester3])),
+    ...Object.fromEntries(validData.map(d => [`${d.subject}_kkm`, d.kkm]))
+  });
+  
+  if (validData.some(d => d.semester4 > 0)) semestersData.push({ 
+    semester: 'Sem 4', 
+    ...Object.fromEntries(validData.map(d => [d.subject, d.semester4])),
+    ...Object.fromEntries(validData.map(d => [`${d.subject}_kkm`, d.kkm]))
+  });
+  
+  if (validData.some(d => d.semester5 > 0)) semestersData.push({ 
+    semester: 'Sem 5', 
+    ...Object.fromEntries(validData.map(d => [d.subject, d.semester5])),
+    ...Object.fromEntries(validData.map(d => [`${d.subject}_kkm`, d.kkm]))
+  });
 
   const colors = [
     '#3b82f6', // Blue
@@ -77,25 +116,29 @@ export default function ResultsChart({ data }: ResultsChartProps) {
         </div>
         <p className="text-gray-900 font-medium mb-2">Belum ada data trend</p>
         <p className="text-gray-600 text-sm">
-          Input minimal 2 semester dengan mata pelajaran yang sama untuk melihat grafik trend
+          Input data semester untuk melihat grafik trend
         </p>
       </div>
     );
   }
 
-  // Calculate trends
+  // Calculate trends dengan analisis KKM
   const subjectTrends = validData.map(subject => {
     const scores = [subject.semester1, subject.semester2, subject.semester3, subject.semester4, subject.semester5];
     const validScores = scores.filter(score => score > 0);
-    const startScore = validScores[0];
-    const endScore = validScores[validScores.length - 1];
-    const trend = endScore - startScore;
+    const startScore = validScores[0] || 0;
+    const endScore = validScores[validScores.length - 1] || 0;
+    const trend = validScores.length >= 2 ? endScore - startScore : 0;
+    const isCritical = endScore < subject.kkm;
 
     return {
       subject: subject.subject,
       start: startScore,
       end: endScore,
       trend,
+      kkm: subject.kkm,
+      isCritical,
+      hasMultipleSemesters: validScores.length >= 2,
       direction: trend > 0 ? 'up' : trend < 0 ? 'down' : 'stable'
     };
   });
@@ -104,7 +147,7 @@ export default function ResultsChart({ data }: ResultsChartProps) {
     <div>
       <div className="h-80 mb-6">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
+          <LineChart data={semestersData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="semester" 
@@ -126,7 +169,7 @@ export default function ResultsChart({ data }: ResultsChartProps) {
                 stroke={colors[index % colors.length]}
                 strokeWidth={2}
                 activeDot={{ r: 4 }}
-                dot={{ r: 2 }}
+                dot={{ r: 3 }}
                 name={subject.subject}
               />
             ))}
@@ -137,7 +180,7 @@ export default function ResultsChart({ data }: ResultsChartProps) {
       {/* Trend Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {subjectTrends.slice(0, 6).map((trend, index) => (
-          <div key={trend.subject} className="border border-gray-200 rounded-md p-3">
+          <div key={trend.subject} className={`border rounded-md p-3 ${trend.isCritical ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center">
                 <div 
@@ -145,21 +188,46 @@ export default function ResultsChart({ data }: ResultsChartProps) {
                   style={{ backgroundColor: colors[index % colors.length] }}
                 />
                 <span className="text-sm font-medium text-gray-900 truncate">{trend.subject}</span>
+                {trend.isCritical && (
+                  <FiAlertTriangle className="ml-2 text-red-500" size={12} />
+                )}
               </div>
-              <div className={`text-sm font-semibold ${
-                trend.direction === 'up' ? 'text-green-600' :
-                trend.direction === 'down' ? 'text-red-600' : 'text-gray-600'
-              }`}>
-                {trend.direction === 'up' ? '+' : ''}{trend.trend.toFixed(1)}
-              </div>
+              {trend.hasMultipleSemesters ? (
+                <div className={`text-sm font-semibold ${trend.direction === 'up' ? 'text-green-600' : trend.direction === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+                  {trend.direction === 'up' ? '+' : ''}{trend.trend.toFixed(1)}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500">1 semester</div>
+              )}
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Semester Awal: {trend.start.toFixed(1)}</span>
-              <span>Semester Akhir: {trend.end.toFixed(1)}</span>
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Nilai: {trend.end.toFixed(1)}</span>
+              <span>KKM: {trend.kkm}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className={trend.end >= trend.kkm ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                {trend.end >= trend.kkm ? '✓ Tuntas' : '✗ Tidak Tuntas'}
+              </span>
+              {trend.hasMultipleSemesters && (
+                <span>Trend: {trend.direction === 'up' ? 'Naik' : trend.direction === 'down' ? 'Turun' : 'Stabil'}</span>
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Critical Subjects Summary */}
+      {subjectTrends.filter(t => t.isCritical).length > 0 && (
+        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex items-center mb-2">
+            <FiAlertTriangle className="text-red-600 mr-2" />
+            <h4 className="font-medium text-red-800">Analisis Critical Subjects</h4>
+          </div>
+          <p className="text-sm text-red-700">
+            Terdapat {subjectTrends.filter(t => t.isCritical).length} mata pelajaran dengan nilai di bawah KKM.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

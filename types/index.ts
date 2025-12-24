@@ -2,6 +2,7 @@ export interface Subject {
   id: string;
   name: string;
   score: number;
+  kkm: number; // Tambahkan KKM
 }
 
 export interface SemesterData {
@@ -19,4 +20,10 @@ export interface ChartData {
   semester3: number;
   semester4: number;
   semester5: number;
+  kkm: number; // Tambahkan KKM untuk chart
+}
+
+export interface SubjectInfo {
+  name: string;
+  lastKKM: number; // Untuk menyimpan KKM terakhir dari mapel
 }

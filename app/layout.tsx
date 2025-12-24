@@ -5,10 +5,12 @@ import Footer from '@/components/Footer';
 import ScrollToTop from '@/components/ScrollToTop';
 
 export const metadata: Metadata = {
-  title: 'Rapor Agit - Kalkulator Nilai Akademik',
+  title: 'Rapor Agit - Hitung Rata-Rata Rapor',
   description: 'Hitung dan analisis rata-rata nilai rapor dari kelas 10-12',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/RA.png',
+    shortcut: '/RA.png',
+    apple: '/RA.png',
   },
 };
 
@@ -19,10 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body className="bg-gray-50">
+      <body className="bg-gray-white">
         <Navbar />
         <main>
           {children}

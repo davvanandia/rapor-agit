@@ -110,11 +110,11 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="lg:w-2/3">
               <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                Rapor Agit - Kalkulator Nilai Akademik
+                Rapor Agit - Hitung Rata-Rata Rapor
               </h1>
               <p className="text-gray-600 mb-6 max-w-3xl">
-                Hitung dan analisis rata-rata nilai rapor dari kelas 10-12 (5 semester) dengan mudah.
-                Pantau perkembangan akademik Anda secara visual dan terstruktur.
+                Hitung dan analisis rata-rata nilai rapor dari semester 1-5 dengan mudah.
+                Pantau perkembangan akademik secara visual dan terstruktur.
               </p>
               
               <div className="flex flex-wrap gap-3">
@@ -188,7 +188,7 @@ export default function Home() {
       {/* Semester Cards */}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Semester (Kelas 10-12)</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Semester (1-5)</h2>
           <p className="text-gray-600">Klik pada semester untuk input atau edit data nilai</p>
         </div>
 
