@@ -12,6 +12,7 @@ export default function Home() {
   const [semesters, setSemesters] = useState<SemesterData[]>([]);
   const [overallAverage, setOverallAverage] = useState<number>(0);
   const [totalOverallScore, setTotalOverallScore] = useState<number>(0);
+  const [totalSubjectsOverall, setTotalSubjectsOverall] = useState<number>(0);
   const [completedSemesters, setCompletedSemesters] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -34,14 +35,26 @@ export default function Home() {
     if (validSemesters.length === 0) {
       setOverallAverage(0);
       setTotalOverallScore(0);
+      setTotalSubjectsOverall(0);
       return;
     }
 
-    const totalAverage = validSemesters.reduce((sum, sem) => sum + sem.average, 0);
-    const totalScore = validSemesters.reduce((sum, sem) => sum + sem.totalScore, 0);
+    // Hitung total skor keseluruhan (jumlah semua nilai dari semua mata pelajaran)
+    let totalScore = 0;
+    // Hitung total jumlah mata pelajaran keseluruhan
+    let totalSubjects = 0;
     
-    setOverallAverage(Number((totalAverage / validSemesters.length).toFixed(2)));
+    validSemesters.forEach(semester => {
+      totalScore += semester.totalScore;
+      totalSubjects += semester.subjects.length;
+    });
+    
+    // Rata-rata keseluruhan = total skor keseluruhan ÷ total jumlah mata pelajaran
+    const average = totalSubjects > 0 ? Number((totalScore / totalSubjects).toFixed(2)) : 0;
+    
+    setOverallAverage(average);
     setTotalOverallScore(totalScore);
+    setTotalSubjectsOverall(totalSubjects);
   };
 
   const handleClearAll = async () => {
@@ -74,6 +87,7 @@ export default function Home() {
       })));
       setOverallAverage(0);
       setTotalOverallScore(0);
+      setTotalSubjectsOverall(0);
       setCompletedSemesters(0);
       
       Swal.fire({
@@ -101,6 +115,9 @@ export default function Home() {
       </div>
     );
   }
+
+  // Hitung progress bar untuk rata-rata
+  const averagePercentage = Math.min(overallAverage, 100);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -145,22 +162,35 @@ export default function Home() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-600">Rata-rata Keseluruhan</span>
-                    <span className="font-bold text-gray-900">{overallAverage.toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="font-bold text-gray-900">{overallAverage.toFixed(2)}</span>
+                      <div className="text-xs text-gray-500">
+                        {totalOverallScore.toLocaleString('id-ID')} ÷ {totalSubjectsOverall} mapel
+                      </div>
+                    </div>
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full">
                     <div 
                       className="h-full bg-blue-600 rounded-full"
-                      style={{ width: `${Math.min(overallAverage, 100)}%` }}
+                      style={{ width: `${averagePercentage}%` }}
                     ></div>
                   </div>
                 </div>
                 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-gray-600">Total Skor</span>
+                    <span className="text-gray-600">Total Skor Keseluruhan</span>
                     <span className="font-bold text-gray-900">{totalOverallScore.toLocaleString('id-ID')}</span>
                   </div>
-                  <p className="text-xs text-gray-500">Jumlah semua nilai</p>
+                  <p className="text-xs text-gray-500">Jumlah semua nilai dari semua semester</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-600">Total Mapel Keseluruhan</span>
+                    <span className="font-bold text-gray-900">{totalSubjectsOverall}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Jumlah mata pelajaran dari semua semester</p>
                 </div>
                 
                 <div>
@@ -189,7 +219,12 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Semester (1-5)</h2>
-          <p className="text-gray-600">Klik pada semester untuk input atau edit data nilai</p>
+          <p className="text-gray-600">
+            Klik pada semester untuk input atau edit data nilai. 
+            <span className="text-blue-600 font-medium ml-1">
+              Rata-rata per semester = total skor semester ÷ jumlah mapel semester
+            </span>
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -211,10 +246,11 @@ export default function Home() {
             <div className="w-10 h-10 bg-blue-100 rounded-md flex items-center justify-center mb-4">
               <FiCheckCircle className="text-blue-600" size={24} />
             </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Input Mudah</h4>
-            <p className="text-gray-600 text-sm">
-              Input nilai mata pelajaran per semester dengan antarmuka yang sederhana dan intuitif.
-            </p>
+            <h4 className="font-semibold text-gray-900 mb-2">Rumus Perhitungan</h4>
+            <div className="text-gray-600 text-sm space-y-2">
+              <p>• <strong>Rata-rata per semester</strong> = Total skor semester ÷ Jumlah mapel</p>
+              <p>• <strong>Rata-rata keseluruhan</strong> = Total semua skor ÷ Total semua mapel</p>
+            </div>
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -268,9 +304,12 @@ export default function Home() {
         <div className="bg-gray-100 border border-gray-300 rounded-lg p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Perhatian</h4>
+              <h4 className="font-semibold text-gray-900 mb-1">Perhitungan Rata-rata</h4>
               <p className="text-gray-600 text-sm">
-                Semua data disimpan di browser Anda. Data tidak akan hilang kecuali browser direset.
+                Contoh: Semester 1 (800 skor, 8 mapel), Semester 2 (800 skor, 8 mapel), Semester 3 (700 skor, 7 mapel)
+              </p>
+              <p className="text-gray-600 text-sm font-medium mt-1">
+                Rata-rata keseluruhan = (800+800+700) ÷ (8+8+7) = 2300 ÷ 23 = 100
               </p>
             </div>
             <button
